@@ -4,7 +4,7 @@ CREATE PROCEDURE InsertUser
     @Lastname NVARCHAR(50),
     @Email NVARCHAR(255),
     @Password NVARCHAR(255),
-    @PhoneNumber NVARCHAR(10),
+    @PhoneNumber NVARCHAR(10)
 AS
 BEGIN
     IF NOT (@Email LIKE '%_@_%._%')
@@ -32,7 +32,7 @@ CREATE PROCEDURE UpdateUser
 AS
 BEGIN
     -- Kiểm tra xem UserID có tồn tại hay không
-    IF NOT EXISTS (SELECT 1 FROM Users WHERE UserID = @UserID)
+    IF NOT EXISTS (SELECT 1 FROM Users WHERE user_id = @UserID)
     BEGIN
         RAISERROR('UserID không tồn tại.', 16, 1);
         RETURN;
@@ -55,11 +55,11 @@ BEGIN
     -- Thực hiện cập nhật thông tin người dùng
     UPDATE Users
     SET 
-        FirstName = @FirstName,
-        LastName = @LastName,
-        Email = @Email,
-        PhoneNumber = @PhoneNumber
-    WHERE UserID = @UserID;
+        first_name = @FirstName,
+        last_name = @LastName,
+        email = @Email,
+        phone_number = @PhoneNumber
+    WHERE user_id = @UserID;
 
     -- Xác nhận cập nhật thành công
     PRINT 'Thông tin người dùng đã được cập nhật thành công.';
@@ -84,13 +84,14 @@ BEGIN
         -- Validate giá
         IF @Price <= 0
         BEGIN
-            THROW 50001, 'Giá sản phẩm phải lớn hơn 0.', 1;
+            RAISERROR('Giá sản phẩm phải lớn hơn 0.', 16, 1);
         END;
 
         -- Validate số lượng tồn kho
         IF @StockQuantity < 0
         BEGIN
-            THROW 50002, 'Số lượng không được âm.', 1;
+            RAISERROR('Số lượng không được âm', 16, 1);
+
         END;
 
         --category ở dạng chọn input
@@ -153,7 +154,7 @@ BEGIN
                 IF @SleeveLength IS NULL OR @NeckStyle IS NULL
                     THROW 50003, 'SleeveLength và NeckStyle là bắt buộc với UpperWear.', 1;
 
-                INSERT INTO UpperWear (upper_id, sleeve_length, neck_style)
+                INSERT INTO UpperWear (upper_id, sleeve_length, neck_type)
                 VALUES (@ProductID, @SleeveLength, @NeckStyle);
             END
             ELSE IF @Category = 'LowerWear'
@@ -161,7 +162,7 @@ BEGIN
                 IF @WaistSize IS NULL OR @LegLength IS NULL
                     THROW 50004, 'WaistSize và LegLength là bắt buộc với LowerWear.', 1;
 
-                INSERT INTO LowerWear (lower_id, waist_size, leg_length)
+                INSERT INTO LowerWear (lower_id, waist_style, leg_length)
                 VALUES (@ProductID, @WaistSize, @LegLength);
             END;       
             PRINT 'Thêm sản phẩm thành công.';
@@ -184,7 +185,7 @@ BEGIN
         -- Kiểm tra sản phẩm có tồn tại hay không
         IF NOT EXISTS (SELECT 1 FROM Products WHERE product_id = @ProductID)
         BEGIN
-            THROW 50001, 'Sản phẩm không tồn tại.', 1;
+            RAISERROR('Sản phẩm không tồn tại.', 16, 1);
         END;
         --Xóa khỏi Products
         DELETE FROM Products
@@ -200,10 +201,9 @@ END;
 GO
 --Cập nhật sản phẩm
 CREATE PROCEDURE UpdateProductBasic
-    @ProductID INT,            
-    @StockQuantity INT = NULL, 
-    @Price DECIMAL(10, 2) = NULL, 
-    --@Rating DECIMAL(3, 2) = NULL 
+    @ProductID INT,              
+    @Description NVARCHAR(500) = NULL,
+    @Price DECIMAL(10, 2) = NULL 
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -212,23 +212,23 @@ BEGIN
         -- Kiểm tra sản phẩm có tồn tại hay không
         IF NOT EXISTS (SELECT 1 FROM Products WHERE product_id = @ProductID)
         BEGIN
-            THROW 50001, 'Sản phẩm không tồn tại.', 1;
+            RAISERROR('Sản phẩm không tồn tại.', 16, 1);
+            RETURN;
         END;
 
-        -- Cập nhật số lượng, giá cả và đánh giá
+        -- Cập nhật giá và mô tả sản phẩm
         UPDATE Products
-        SET stock_quantity = ISNULL(@StockQuantity, stock_quantity), -- Giữ nguyên nếu @StockQuantity = NULL
-            price = ISNULL(@Price, price),                           
-            --rating = ISNULL(@Rating, rating)                       
+        SET 
+            price = ISNULL(@Price, price),            
+            description = ISNULL(@Description, description) 
         WHERE product_id = @ProductID;
 
         PRINT 'Cập nhật sản phẩm thành công.';
     END TRY
     BEGIN CATCH
-        -- Xử lý lỗi
+        -- Xử lý lỗi và in thông báo lỗi
         PRINT ERROR_MESSAGE();
     END CATCH
 END;
 GO
-
 
