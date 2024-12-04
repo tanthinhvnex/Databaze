@@ -42,7 +42,7 @@ if (!is_array($row)) {
 
 // Retrieve user_id from the fetched row
 $user_id = $row['user_id'];  // Lấy user_id từ kết quả
-
+$_SESSION['user_id'] = $user_id; 
 // SQL query to check if the user is a seller or buyer
 $sqlRole = "SELECT 'seller' AS role FROM [shoppee].[dbo].[Sellers] WHERE seller_id = ?
             UNION
@@ -72,7 +72,7 @@ $_SESSION['role'] = $role;  // Set the session role
 if ($role === 'seller') {
     header("Location: sellers/dashboard.php");  // Redirect to seller dashboard
 } else {
-    header("Location: buyers/dashboard.php");  // Redirect to buyer dashboard
+    header("Location: buyers/Nav_bar.html");  // Redirect to buyer dashboard
 }
 exit();
 

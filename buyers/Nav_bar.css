@@ -1,0 +1,81 @@
+/* Reset styles */
+body, h1, p, ul, li, a {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    text-decoration: none;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* General body styling */
+
+/* Navbar container */
+.navbar {
+    background-color: rgba(255, 255, 255, 0.8); /* Nền trắng bán trong suốt */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px); /* Hiệu ứng làm mờ */
+}
+
+/* Logo section */
+.navbar .logo a {
+    color: #FF7F50; /* Cam pastel */
+    font-size: 26px;
+    font-weight: 600;
+    text-transform: uppercase;
+    text-shadow: 0 2px 4px rgba(255, 127, 80, 0.5);
+}
+
+/* Navigation links */
+.nav-links {
+    display: flex;
+    gap: 20px;
+}
+
+.nav-links li {
+    list-style: none;
+}
+
+.nav-links a {
+    color: #555; /* Màu trung tính */
+    padding: 10px 20px;
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.6); /* Nền trắng nhẹ */
+    transition: all 0.3s ease;
+    font-size: 16px;
+    font-weight: 500;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.nav-links a:hover {
+    background: linear-gradient(135deg, #FF7F50, #FFA07A); /* Hiệu ứng gradient khi hover */
+    color: white;
+    box-shadow: 0 8px 15px rgba(255, 127, 80, 0.4);
+}
+
+/* Content section styling */
+
+
+/* Animation for fading in content */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.content {
+    animation: fadeIn 0.8s ease-in-out;
+}
