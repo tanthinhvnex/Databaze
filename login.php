@@ -1,9 +1,8 @@
- <!-- login.php -->
 <?php
 // Replace these values with your SQL Server connection details
 $serverName = "TanThinh";
 $connectionOptions = array(
-    "Database" => "shopee"
+    "Database" => "shopee",
 );
 
 // Establishes the connection
@@ -15,55 +14,67 @@ if (!$conn) {
 }
 
 // Retrieve values from the form
-$username = $_POST['username'];
+$email = $_POST['email'];
 $password = $_POST['password'];
 session_start();
-$_SESSION['username'] = $username;
-// SQL query to check if the username and password match for staff
-$sql = "SELECT * FROM STAFF_ACCOUNT WHERE Username = ? AND Pass = ?";
-$params = array($username, $password);
-$options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
-$stmt = sqlsrv_query($conn, $sql, $params, $options);
+$_SESSION['email'] = $email;
 
-// SQL query to check if the username and password match for customer
-$sql1 = "SELECT * FROM CUSTOMER_ACCOUNT WHERE Username = ? AND Pass = ?";
-$params1 = array($username, $password);
-$options1 = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
-$stmt1 = sqlsrv_query($conn, $sql1, $params1, $options1);
+// SQL query to check if the user exists in the Users table with matching email and password
+$sql = "SELECT user_id, email, password FROM [shopee].[dbo].[Users] WHERE email = ? AND password = ?";
+$params = array($email, $password);
+$stmt = sqlsrv_query($conn, $sql, $params);
 
-// Check if the user is a manager
-$sql2 = "SELECT * FROM STAFF_ACCOUNT JOIN STAFF ON STAFF_ACCOUNT.ID = STAFF.ID WHERE username = ? AND Pass = ? AND STAFF.ID IN (SELECT Mgr_id FROM STAFF)";
-$params2 = array($username, $password);
-$options2 = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
-$stmt2 = sqlsrv_query($conn, $sql2, $params2, $options2);
-
-if ($stmt === false && $stmt1 === false && $stmt2 === false) {
-    die(print_r(sqlsrv_errors(), true));
+if ($stmt === false) {
+    die(print_r(sqlsrv_errors(), true));  // In lỗi chi tiết nếu có lỗi khi thực hiện truy vấn
 }
 
-if (sqlsrv_num_rows($stmt2) > 0) {
-    // Login successful
-    // Redirect to the staff page
-    header("Location: staff/manager/ManageStaff/staff.php");
-    exit(); // Ensure that no further code is executed after the redirect
-}
-else if (sqlsrv_num_rows($stmt) > 0) {
-    // Login successful
-    // Redirect to the menu page
-    header("Location: staff/ManageCustomer/user.php");
-    exit(); // Ensure that no further code is executed after the redirect
- } 
-else if (sqlsrv_num_rows($stmt1) > 0) {
-    // Login successful
-    // Redirect to the menu page
-    header("Location: customer/menu.php");
-    exit(); // Ensure that no further code is executed after the redirect
+// Fetch the result
+$row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);  // Get the first row of the result
+
+// Kiểm tra nếu $row là một mảng hợp lệ
+if (!is_array($row)) {
+    // Nếu không có dữ liệu nào
+    echo "Login failed. Please check your email and password.";
+    sqlsrv_close($conn);
+    exit();  // Exit if no rows are returned
+} 
+
+
+// Retrieve user_id from the fetched row
+$user_id = $row['user_id'];  // Lấy user_id từ kết quả
+
+// SQL query to check if the user is a seller or buyer
+$sqlRole = "SELECT 'seller' AS role FROM [shopee].[dbo].[Sellers] WHERE seller_id = ?
+            UNION
+            SELECT 'buyer' AS role FROM [shopee].[dbo].[Buyers] WHERE buyer_id = ?";
+$paramsRole = array($user_id, $user_id);
+$stmtRole = sqlsrv_query($conn, $sqlRole, $paramsRole);
+
+// Check if the query executed successfully
+if ($stmtRole === false) {
+    die(print_r(sqlsrv_errors(), true));  // In case of query execution error
 }
 
-else {
-    // Login failed
-    echo "Login failed. Please check your username and password.";
- }
+// Fetch the role information
+$rowRole = sqlsrv_fetch_array($stmtRole, SQLSRV_FETCH_ASSOC);  // Get the first row of the role query
+
+// Kiểm tra nếu có dữ liệu trong $rowRole
+if ($rowRole === false) {
+    echo "User found but no role (buyer/seller) assigned.<br>";
+    sqlsrv_close($conn);
+    exit();  // Exit if no role is found
+}
+
+$role = $rowRole['role'];  // Lấy vai trò người dùng
+$_SESSION['role'] = $role;  // Set the session role
+
+// Redirect to the appropriate dashboard based on role
+if ($role === 'seller') {
+    header("Location: sellers/dashboard.php");  // Redirect to seller dashboard
+} else {
+    header("Location: buyers/dashboard.php");  // Redirect to buyer dashboard
+}
+exit();
 
 // Close the database connection
 sqlsrv_close($conn);
