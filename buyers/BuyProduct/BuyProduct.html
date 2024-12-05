@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buy Product</title>
+    <link rel="stylesheet" href="BuyProduct.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Mua Sản Phẩm</h1>
+        <form action="BuyProduct.php" method="POST">
+            <div class="form-group">
+                <label for="product">Tên sản phẩm:</label>
+                <input type="text" id="product" name="product" placeholder="Nhập tên sản phẩm" required>
+            </div>
+            <div class="form-group">
+                <label for="quantity">Số lượng:</label>
+                <input type="number" id="quantity" name="quantity" placeholder="Nhập số lượng" required>
+            </div>
+            <div class="form-group">
+                <label for="address">Địa chỉ giao hàng:</label>
+                <textarea id="address" name="address" placeholder="Nhập địa chỉ giao hàng" required></textarea>
+            </div>
+            <button type="submit" class="btn">Đặt hàng</button>
+        </form>
+    </div>
+</body>
+</html>

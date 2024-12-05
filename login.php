@@ -1,8 +1,8 @@
 <?php
 // Replace these values with your SQL Server connection details
-$serverName = "TanThinh";
+$serverName = "NGUYENMINHKHANG\MSSQLSERVER04";
 $connectionOptions = array(
-    "Database" => "shopee",
+    "Database" => "shoppee",
 );
 
 // Establishes the connection
@@ -20,7 +20,7 @@ session_start();
 $_SESSION['email'] = $email;
 
 // SQL query to check if the user exists in the Users table with matching email and password
-$sql = "SELECT user_id, email, password FROM [shopee].[dbo].[Users] WHERE email = ? AND password = ?";
+$sql = "SELECT user_id, email, password FROM [shoppee].[dbo].[Users] WHERE email = ? AND password = ?";
 $params = array($email, $password);
 $stmt = sqlsrv_query($conn, $sql, $params);
 
@@ -42,11 +42,11 @@ if (!is_array($row)) {
 
 // Retrieve user_id from the fetched row
 $user_id = $row['user_id'];  // Lấy user_id từ kết quả
-
+$_SESSION['user_id'] = $user_id; 
 // SQL query to check if the user is a seller or buyer
-$sqlRole = "SELECT 'seller' AS role FROM [shopee].[dbo].[Sellers] WHERE seller_id = ?
+$sqlRole = "SELECT 'seller' AS role FROM [shoppee].[dbo].[Sellers] WHERE seller_id = ?
             UNION
-            SELECT 'buyer' AS role FROM [shopee].[dbo].[Buyers] WHERE buyer_id = ?";
+            SELECT 'buyer' AS role FROM [shoppee].[dbo].[Buyers] WHERE buyer_id = ?";
 $paramsRole = array($user_id, $user_id);
 $stmtRole = sqlsrv_query($conn, $sqlRole, $paramsRole);
 
@@ -72,7 +72,7 @@ $_SESSION['role'] = $role;  // Set the session role
 if ($role === 'seller') {
     header("Location: sellers/dashboard.php");  // Redirect to seller dashboard
 } else {
-    header("Location: buyers/dashboard.php");  // Redirect to buyer dashboard
+    header("Location: buyers/Nav_bar.html");  // Redirect to buyer dashboard
 }
 exit();
 
