@@ -67,6 +67,7 @@ END;
 GO
 --seller thêm sản phẩm
 CREATE PROCEDURE InsertProduct
+    @SellerID INT,
     @ProductName NVARCHAR(255),
     @Size NVARCHAR(50),
     @Color NVARCHAR(50),
@@ -101,7 +102,6 @@ BEGIN
         SELECT @ExistingProductID = product_id
         FROM Products
         WHERE product_name = @ProductName
-          AND category = @Category;
         IF @ExistingProductID IS NOT NULL
         BEGIN
             -- Sản phẩm đã tồn tại trong bảng Products, kiểm tra biến thể
@@ -139,8 +139,8 @@ BEGIN
         BEGIN
             DECLARE @ProductID INT;
 
-            INSERT INTO Products (product_name, price, description, category)
-            VALUES (@ProductName, @Price, @Description, @Category);
+            INSERT INTO Products (seller_id, product_name, price, description, category)
+            VALUES (@SellerID, @ProductName, @Price, @Description, @Category);
 
             SET @ProductID = SCOPE_IDENTITY();
 
@@ -278,3 +278,48 @@ BEGIN
 END;
 GO
 --
+CREATE PROCEDURE InsertPayment
+    @OrderID INT,
+    @PaymentMethod NVARCHAR(50), -- Phương thức thanh toán
+    @RefCode NVARCHAR(255) = NULL -- Mã tham chiếu (có thể null)
+AS
+BEGIN
+    BEGIN TRY
+        -- Kiểm tra xem UserID có tồn tại
+        IF NOT EXISTS (SELECT 1 FROM Orders WHERE order_id = @OrderID)
+        BEGIN
+            RAISERROR('Id không tồn tại.', 16, 1);
+            RETURN;
+        END
+
+        -- Thêm thông tin thanh toán vào bảng Payment
+        INSERT INTO Payment (order_id, payment_method, ref_code)
+        VALUES (@OrderID, @PaymentMethod, @RefCode);
+        PRINT 'Thêm thông tin thanh toán thành công.';
+    END TRY
+    BEGIN CATCH
+        PRINT ERROR_MESSAGE();
+    END CATCH
+END;
+GO
+--
+CREATE PROCEDURE InsertShipping
+    @OrderID INT,              -- Order associated with the shipping
+    @ShippingAddress NVARCHAR(255),
+    @ShippingFee DECIMAL(10, 2),
+    @ShippingPartner NVARCHAR(50),
+    @TrackingNumber NVARCHAR(50),
+    @Driver NVARCHAR(50)
+AS
+BEGIN
+    BEGIN TRY
+        INSERT INTO Shipping (order_id, tracking_number, shipping_address, shipping_partner, driver_name, shipping_fee)
+        VALUES (@OrderID, @TrackingNumber, @ShippingAddress, @ShippingPartner, @Driver, @ShippingFee);
+
+        PRINT 'Shipping record has been successfully added.';
+    END TRY
+    BEGIN CATCH
+        PRINT ERROR_MESSAGE();
+    END CATCH
+END;
+GO
