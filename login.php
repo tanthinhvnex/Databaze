@@ -70,7 +70,7 @@ $_SESSION['role'] = $role;  // Set the session role
 
 // Redirect to the appropriate dashboard based on role
 if ($role === 'seller') {
-    header("Location: sellers/dashboard.php");  // Redirect to seller dashboard
+    header("Location: sellers/Nav_bar.html");  // Redirect to seller dashboard
 } else {
     header("Location: buyers/Nav_bar.html");  // Redirect to buyer dashboard
 }
