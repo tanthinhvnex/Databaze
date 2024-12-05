@@ -65,7 +65,7 @@ BEGIN
     PRINT 'Thông tin người dùng đã được cập nhật thành công.';
 END;
 GO
-
+--seller thêm sản phẩm
 CREATE PROCEDURE InsertProduct
     @ProductName NVARCHAR(255),
     @Size NVARCHAR(50),
@@ -231,4 +231,50 @@ BEGIN
     END CATCH
 END;
 GO
+--User review
+CREATE PROCEDURE InsertReview
+    @OrderID INT,               -- ID of the associated order
+    @OrderDetails_ID INT,      -- ID of the product variant in the order detail
+    @Rating INT,                -- Rating value
+    @Comment NVARCHAR(250),     -- Comment text
+    @ReviewDate DATE = NULL     -- Review date, defaults to NULL (use current date if not provided)
+AS
+BEGIN
+    -- Validate input
+    IF @Rating < 1 OR @Rating > 5
+    BEGIN
+        RAISERROR('Invalid rating value. Must be between 1 and 5.', 16, 1);
+        RETURN;
+    END;
 
+    -- Validate OrderDetails exists with the given composite key
+    IF NOT EXISTS (
+        SELECT 1
+        FROM OrderDetails
+        WHERE order_id = @OrderID AND orderDetail_ID = @OrderDetails_ID
+    )
+    BEGIN
+        RAISERROR('Order detail does not exist for the provided OrderID and ProductVariantID.', 16, 1);
+        RETURN;
+    END;
+
+    -- Insert review
+    BEGIN TRY
+        INSERT INTO Reviews (order_id,orderDetail_ID,comment,rating,review_date)
+        VALUES (
+            @OrderID,
+            @OrderDetails_ID,
+            @Comment,
+            @Rating,
+            ISNULL(@ReviewDate, GETDATE())
+        );
+
+        PRINT 'Review has been successfully inserted.';
+    END TRY
+    BEGIN CATCH
+        -- Handle errors
+        PRINT ERROR_MESSAGE();
+    END CATCH
+END;
+GO
+--

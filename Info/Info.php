@@ -27,7 +27,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-//Nếu có post thì thực hiện cập nhật
+// Nếu có post thì thực hiện cập nhật
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $firstname = $_POST['firstname'];
     $lastname = $_POST['lastname'];
@@ -58,12 +58,49 @@ if ($stmt === false) {
 
 $user = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
 ?>
-<script>    
-    // Điền thông tin người dùng vào form
-    document.addEventListener("DOMContentLoaded", function () {
-        document.getElementById("firstname").value = "<?php echo $user['first_name']; ?>";
-        document.getElementById("lastname").value = "<?php echo $user['last_name']; ?>";
-        document.getElementById("email").value = "<?php echo $user['email']; ?>";
-        document.getElementById("phonenumber").value = "<?php echo $user['phone_number']; ?>";
-    });
-</script>
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Thông tin người dùng</title>
+    <link rel="stylesheet" href="Info.css">
+</head>
+<body>
+    <div class="container">
+        <div class="user-image">
+            <img src="../Img/user_img.jpg" alt="Ảnh người dùng">
+        </div>
+        <div class="user-details">
+            <div><strong>User ID:</strong> <span id="user_id"><?php echo htmlspecialchars($user_id); ?></span></div>
+            <div><strong>Email:</strong> <span id="email"><?php echo htmlspecialchars($user['email']); ?></span></div>
+            <div><strong>Họ:</strong> <span id="lastname"><?php echo htmlspecialchars($user['last_name']); ?></span></div>
+            <div><strong>Tên:</strong> <span id="firstname"><?php echo htmlspecialchars($user['first_name']); ?></span></div>
+            <div><strong>Số điện thoại:</strong> <span id="phone"><?php echo htmlspecialchars($user['phone_number']); ?></span></div>
+            <button class="edit-button" onclick="openEditForm()">Chỉnh sửa thông tin</button>
+        </div>
+    </div>
+
+    <!-- Form chỉnh sửa thông tin -->
+    <div id="edit-form" class="edit-form" style="display: none;">
+        <form id="userForm" method="POST" action="info.php">
+            <label for="edit-email">Email:</label>
+            <input type="email" id="edit-email" name="email" required><br>
+
+            <label for="edit-lastname">Họ:</label>
+            <input type="text" id="edit-lastname" name="lastname" required><br>
+
+            <label for="edit-firstname">Tên:</label>
+            <input type="text" id="edit-firstname" name="firstname" required><br>
+
+            <label for="edit-phone">Số điện thoại:</label>
+            <input type="tel" id="edit-phone" name="phonenumber" required><br>
+
+            <button type="submit">Lưu thay đổi</button>
+            <button type="button" onclick="closeEditForm()">Hủy</button>
+        </form>
+    </div>
+
+    <script src="Info.js"></script>
+</body>
+</html>
