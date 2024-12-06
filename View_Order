@@ -1,0 +1,204 @@
+
+<?php
+//-- =============================================
+//-- Author:      huukha.04
+//-- Create Date: //2024
+//-- Description: 
+//-- =============================================
+// Kết nối cơ sở dữ liệu
+$serverName = "KHA\\SQLEXPRESS";
+$database = "DB";
+$uid = ""; // Tên đăng nhập SQL Server
+$pass = ""; // Mật khẩu SQL Server
+
+$connectionOptions = [
+    "Database" => $database,
+    "Uid" => $uid,
+    "PWD" => $pass,
+];
+
+$conn = sqlsrv_connect($serverName, $connectionOptions);
+
+if ($conn === false) {
+    die("Không thể kết nối cơ sở dữ liệu. Vui lòng thử lại sau.");
+}
+
+// Xử lý khi người dùng submit form
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $order_id = intval($_POST['order_id']);
+
+    if ($order_id <= 0) {
+        die("Mã đơn hàng không hợp lệ.");
+    }
+
+    // Truyền tham số đầu ra bằng tham chiếu
+    $totalRevenue = 0; // Khởi tạo biến cho kết quả
+    $sql = "{? = CALL CalculateTotalRevenueByOrder(?)}";
+    $params = [
+        [&$totalRevenue, SQLSRV_PARAM_OUT], // Biến đầu ra truyền tham chiếu
+        [$order_id, SQLSRV_PARAM_IN], // Mã đơn hàng truyền vào
+    ];
+
+    $stmt = sqlsrv_query($conn, $sql, $params);
+
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    // Truy vấn thông tin chính từ OrderDetails và Shipping
+    $sql = "
+    SELECT 
+        od.product_id, 
+        od.quantity, 
+        od.price_on_purchase, 
+        ISNULL(s.shipping_fee, 0) AS shipping_fee,
+        o.voucher_id  -- Lấy voucher_id từ bảng Orders
+    FROM OrderDetails od
+    LEFT JOIN Shipping s ON od.order_id = s.order_id
+    LEFT JOIN Orders o ON od.order_id = o.order_id  -- JOIN bảng Orders để lấy voucher_id
+    WHERE od.order_id = ?
+";
+    $params = [$order_id];
+    $stmt = sqlsrv_query($conn, $sql, $params);
+
+    if ($stmt === false) {
+        die("Truy vấn thất bại: " . print_r(sqlsrv_errors(), true));
+    }
+
+    $orderDetails = [];
+    $shipping_fee = 0;
+    $totalAmount = 0;
+    $voucher_amount = 0;  // Khởi tạo voucher_amount
+
+    while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+        $totalPrice = $row['price_on_purchase'] * $row['quantity'];
+        $totalAmount += $totalPrice;
+        $shipping_fee = $row['shipping_fee'];
+        $orderDetails[] = $row;
+
+        // Kiểm tra voucher_id và truy vấn discount_amount từ bảng Vouchers nếu voucher_id không null
+        if ($row['voucher_id'] !== null) {
+            $sqlVoucher = "SELECT discount_amount FROM Vouchers WHERE voucher_id = ?";
+            $stmtVoucher = sqlsrv_query($conn, $sqlVoucher, [$row['voucher_id']]);
+            
+            if ($stmtVoucher !== false) {
+                $voucher_row = sqlsrv_fetch_array($stmtVoucher, SQLSRV_FETCH_ASSOC);
+                if ($voucher_row) {
+                    $voucher_amount = $voucher_row['discount_amount'];
+                }
+                sqlsrv_free_stmt($stmtVoucher);
+            } else {
+                die("Truy vấn voucher thất bại: " . print_r(sqlsrv_errors(), true));
+            }
+        }
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hóa đơn đơn hàng</title>
+    <style>
+        /* Thêm các kiểu CSS cơ bản */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .invoice-container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .invoice-header {
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        table th {
+            background-color: #f4f4f4;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <div class="invoice-header">
+            <h1>Thông tin Đơn Hàng</h1>
+            <p>Mã Đơn Hàng: <?php echo isset($order_id) ? htmlspecialchars($order_id) : ''; ?></p>
+        </div>
+        
+        <form method="POST" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>">
+            <div class="form-group">
+                <label for="order_id">Nhập mã đơn hàng để xem hóa đơn:</label>
+                <input type="number" id="order_id" name="order_id" placeholder="Mã đơn hàng" required>
+                <button type="submit">Xem Hóa Đơn</button>
+            </div>
+        </form>
+
+        <?php if (isset($orderDetails) && !empty($orderDetails)): ?>
+        <table class="invoice-details">
+            <thead>
+                <tr>
+                    <th>Sản phẩm</th>
+                    <th>Số lượng</th>
+                    <th>Đơn giá</th>
+                    <th>Tổng tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($orderDetails as $item): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($item['product_id']); ?></td>
+                        <td><?php echo htmlspecialchars($item['quantity']); ?></td>
+                        <td><?php echo number_format($item['price_on_purchase'], 0, ',', '.'); ?> VND</td>
+                        <td><?php echo number_format($item['price_on_purchase'] * $item['quantity'], 0, ',', '.'); ?> VND</td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+
+        <div class="total-row">
+            <table>
+                <tr>
+                    <td>Tổng tiền hàng:</td>
+                    <td><?php echo number_format($totalAmount, 0, ',', '.'); ?> VND</td>
+                </tr>
+                <tr>
+                    <td>Phí vận chuyển:</td>
+                    <td><?php echo number_format($shipping_fee, 0, ',', '.'); ?> VND</td>
+                </tr>
+                <tr>
+                    <td>Giảm giá:</td>
+                    <td><?php echo number_format($voucher_amount, 0, ',', '.'); ?> VND</td>
+                </tr>
+                <tr>
+                    <td>Số tiền phải thanh toán:</td>
+                    <td><?php echo number_format($totalRevenue, 0, ',', '.'); ?> VND</td>
+                </tr>
+            </table>
+        </div>
+        <?php endif; ?>
+    </div>
+</body>
+</html>
+
+<?php
+// Giải phóng tài nguyên
+if (isset($stmt)) {
+    sqlsrv_free_stmt($stmt);
+}
+?>
