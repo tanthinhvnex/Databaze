@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Details</title>
+    <link rel="stylesheet" href="Order_details.css">
+</head>
+<body>
+    <div class="order-details-container">
+        <h1>Order Details</h1>
+        <table class="order-details-table">
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Unit Price</th>
+                    <th>Quantity</th>
+                    <th>Total Price</th>
+                </tr>
+            </thead>
+            <tbody id="order-details-body">
+                <!-- Sample row -->
+                <tr>
+                    <td>Cotton T-Shirt</td>
+                    <td>180,000</td>
+                    <td>2</td>
+                    <td>360,000</td>
+                </tr>
+                <!-- More rows will be dynamically added here -->
+            </tbody>
+        </table>
+        <div class="order-total">
+            <strong>Total Amount:</strong> <span id="total-amount">360,000</span>
+        </div>
+        <button class="back-button" onclick="goBack()">Back to Orders</button>
+    </div>
+    <script src="Order_details.js"></script>
+</body>
+</html>
