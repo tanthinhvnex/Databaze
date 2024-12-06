@@ -186,12 +186,26 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM Products WHERE product_id = @ProductID)
         BEGIN
             RAISERROR('Sản phẩm không tồn tại.', 16, 1);
+            RETURN;
         END;
-        --Xóa khỏi Products
+
+        -- Xóa các bản ghi trong bảng UpperWear liên quan đến sản phẩm
+        DELETE FROM UpperWear
+        WHERE upper_id = @ProductID;
+
+        -- Xóa các bản ghi trong bảng LowerWear liên quan đến sản phẩm
+        DELETE FROM LowerWear
+        WHERE lower_id = @ProductID;
+
+        -- Xóa các biến thể trong bảng ProductVariant liên quan đến sản phẩm
+        DELETE FROM ProductVariant
+        WHERE product_id = @ProductID;
+
+        -- Xóa sản phẩm khỏi bảng Products
         DELETE FROM Products
         WHERE product_id = @ProductID;
 
-        PRINT 'Xóa sản phẩm thành công.';
+        PRINT 'Xóa sản phẩm và các liên kết thành công.';
     END TRY
     BEGIN CATCH
         -- Xử lý lỗi
@@ -199,6 +213,7 @@ BEGIN
     END CATCH
 END;
 GO
+
 --Cập nhật sản phẩm
 CREATE PROCEDURE UpdateProductBasic
     @ProductID INT,              
