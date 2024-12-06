@@ -3,7 +3,7 @@ session_start(); // Start the session
 
 // Database connection configuration
 $serverName = "NGUYENMINHKHANG\\MSSQLSERVER04"; // SQL Server hostname
-$database = "shoppee"; // Database name
+$database = "shopee"; // Database name
 $uid = ""; // SQL Server username
 $pass = ""; // SQL Server password
 

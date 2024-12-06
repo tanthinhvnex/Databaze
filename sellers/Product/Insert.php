@@ -2,8 +2,8 @@
 session_start();
 
 // Database connection
-$serverName = "NGUYENMINHKHANG\MSSQLSERVER04";
-$database = "shoppee";
+$serverName = "TanThinh";
+$database = "shopee";
 $uid = ""; // Your SQL Server username
 $pass = ""; // Your SQL Server password
 

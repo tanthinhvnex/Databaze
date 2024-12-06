@@ -323,3 +323,72 @@ BEGIN
     END CATCH
 END;
 GO
+-- Lấy danh sách sản phẩm và thông tin người bán theo danh mục và khoảng giá
+CREATE PROCEDURE GetProductsBySellerAndCategory
+    @Category NVARCHAR(50),
+    @MinPrice DECIMAL(10,2),
+    @MaxPrice DECIMAL(10,2)
+AS
+BEGIN
+    SELECT 
+        p.product_id,
+        p.product_name,
+        p.price,
+        p.category,
+        s.shop_name,
+        u.first_name + ' ' + u.last_name as seller_name,
+        u.email as seller_email
+    FROM Products p
+    INNER JOIN Sellers s ON p.seller_id = s.seller_id
+    INNER JOIN Users u ON s.seller_id = u.user_id
+    WHERE p.category = @Category 
+    AND p.price BETWEEN @MinPrice AND @MaxPrice
+    ORDER BY p.price ASC;
+END;
+GO
+
+--
+CREATE PROCEDURE GetProductsWithoutCategory
+    @minPrice DECIMAL(10,2),
+    @maxPrice DECIMAL(10,2)
+AS
+BEGIN
+    SELECT 
+        p.product_id,
+        p.product_name,
+        p.price,
+        p.category,
+        s.shop_name,
+        u.first_name + ' ' + u.last_name AS seller_name
+    FROM Products p
+    JOIN Sellers s ON p.seller_id = s.seller_id
+    JOIN Users u ON s.seller_id = u.user_id
+    WHERE p.price BETWEEN @MinPrice AND @MaxPrice
+    ORDER BY p.price ASC;
+END
+
+-- Thống kê doanh thu theo người bán và có lọc theo số lượng đơn tối thiểu
+CREATE PROCEDURE GetSellerRevenueStats
+    @MinOrders INT,
+    @StartDate DATE,
+    @EndDate DATE
+AS
+BEGIN
+    SELECT 
+        s.seller_id,
+        s.shop_name,
+        u.first_name + ' ' + u.last_name as seller_name,
+        COUNT(DISTINCT o.order_id) as total_orders,
+        SUM(od.total_price) as total_revenue,
+        AVG(od.price_on_purchase) as avg_product_price
+    FROM Sellers s
+    INNER JOIN Users u ON s.seller_id = u.user_id
+    INNER JOIN Products p ON s.seller_id = p.seller_id
+    INNER JOIN OrderDetails od ON p.product_id = od.product_id
+    INNER JOIN Orders o ON od.order_id = o.order_id
+    WHERE o.order_date BETWEEN @StartDate AND @EndDate
+    GROUP BY s.seller_id, s.shop_name, u.first_name, u.last_name
+    HAVING COUNT(DISTINCT o.order_id) >= @MinOrders
+    ORDER BY total_revenue DESC;
+END;
+GO
