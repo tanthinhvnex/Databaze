@@ -1,3 +1,4 @@
+<!-- sellers/Nav_bar.html -->
 <!DOCTYPE html>
 <html lang="vi">
 
@@ -12,7 +13,7 @@
     <!-- Navbar -->
     <div class="navbar">
         <div class="logo">
-            <a href="#">Databaze</a>
+            <a href="#" onclick="loadIframe('./Homepage/Homepage.php')">Databaze</a>
         </div>
         <ul class="nav-links">
             <li><a href="#" onclick="loadIframe('./Homepage/Homepage.php')">Trang chủ</a></li>
@@ -22,7 +23,7 @@
     </div>
 
     <!-- Content Section -->
-    <iframe id="content-frame" src="./Homepage/homepage.php" style="width: 100%; height: 90vh; border: none;"></iframe>
+    <iframe id="content-frame" src="./Homepage/Homepage.php" style="width: 100%; height: 90vh; border: none;"></iframe>
 
     <script>
         // Function to dynamically change the iframe source

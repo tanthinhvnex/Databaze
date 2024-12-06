@@ -1,4 +1,3 @@
-/* nav_bar.css */
 /* Reset styles */
 body, h1, p, ul, li, a {
     margin: 0;
@@ -6,9 +5,13 @@ body, h1, p, ul, li, a {
     list-style: none;
     text-decoration: none;
     font-family: 'Poppins', sans-serif;
+    box-sizing: border-box; /* Đảm bảo tính toán kích thước chính xác */
 }
-
 /* General body styling */
+body {
+    overflow-x: hidden; /* Ngăn chặn cuộn ngang */
+    padding-top: 70px; /* Thêm khoảng cách trên cùng để tránh bị navbar che khuất */
+}
 
 /* Navbar container */
 .navbar {
@@ -20,11 +23,13 @@ body, h1, p, ul, li, a {
     position: fixed;
     width: 100%;
     top: 0;
+    left: 0;
     z-index: 1000;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     border-bottom: 2px solid rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(10px); /* Hiệu ứng làm mờ */
 }
+
 
 /* Logo section */
 .navbar .logo a {
@@ -39,6 +44,7 @@ body, h1, p, ul, li, a {
 .nav-links {
     display: flex;
     gap: 20px;
+    margin: 0;
 }
 
 .nav-links li {
@@ -60,10 +66,13 @@ body, h1, p, ul, li, a {
     background: linear-gradient(135deg, #FF7F50, #FFA07A); /* Hiệu ứng gradient khi hover */
     color: white;
     box-shadow: 0 8px 15px rgba(255, 127, 80, 0.4);
+    transform: scale(1.1); /* Tăng kích thước nhẹ khi hover */
 }
 
 /* Content section styling */
-
+.content {
+    animation: fadeIn 0.8s ease-in-out;
+}
 
 /* Animation for fading in content */
 @keyframes fadeIn {
@@ -77,52 +86,38 @@ body, h1, p, ul, li, a {
     }
 }
 
-.content {
-    animation: fadeIn 0.8s ease-in-out;
-}
-/* Navigation links */
-.nav-links a {
-    color: #555; /* Màu trung tính */
-    padding: 10px 20px;
-    border-radius: 30px;
-    background: rgba(255, 255, 255, 0.6); /* Nền trắng nhẹ */
-    transition: all 0.3s ease;
-    font-size: 16px;
-    font-weight: 500;
+/* Đảm bảo các phần tử không bị đẩy ra ngoài màn hình */
+.container {
+    padding-top: 80px; /* Dành không gian cho navbar cố định */
 }
 
-/* Hiệu ứng khi hover vào các link */
-.nav-links a:hover {
-    background-color: #FF7F50; /* Màu cam pastel khi hover */
-    color: #fff; /* Màu chữ trắng khi hover */
+/* Đảm bảo các phần tử trong navbar không bị tràn */
+.navbar .logo, .nav-links {
+    flex-grow: 1; /* Đảm bảo các phần tử chiếm không gian phù hợp */
 }
 
-/* Content iframe styling */
-iframe {
-    margin-top: 80px; /* Khoảng cách dưới navbar */
+/* Đảm bảo khoảng cách giữa các phần tử navbar */
+.navbar .nav-links {
+    gap: 20px;
 }
 
-/* Responsive design */
-@media screen and (max-width: 768px) {
+/* Responsive adjustments */
+@media (max-width: 768px) {
     .navbar {
-        flex-direction: column;
-        align-items: flex-start;
+        padding: 10px 15px; /* Điều chỉnh padding cho màn hình nhỏ */
     }
 
     .nav-links {
         flex-direction: column;
         gap: 10px;
-        width: 100%;
     }
 
     .nav-links a {
-        text-align: left;
-        padding: 12px 20px;
-        width: 100%;
-        border-radius: 10px;
+        padding: 8px 15px;
+        font-size: 14px; /* Điều chỉnh font-size cho màn hình nhỏ */
     }
 
     .navbar .logo a {
-        font-size: 22px;
+        font-size: 22px; /* Điều chỉnh kích thước logo cho màn hình nhỏ */
     }
 }

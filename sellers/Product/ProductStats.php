@@ -1,15 +1,15 @@
 <?php
-// Xử lý form tìm kiếm sản phẩm
+session_start();
+$seller_id = $_SESSION['user_id']; // Assuming seller ID is stored in session
+
 $category = isset($_GET['category']) ? $_GET['category'] : 'All';
 $minPrice = isset($_GET['minPrice']) ? floatval($_GET['minPrice']) : 0;
 $maxPrice = isset($_GET['maxPrice']) ? floatval($_GET['maxPrice']) : 20000000;
 $sortBy = isset($_GET['sortBy']) ? $_GET['sortBy'] : 'price_asc';
 
-// Khởi tạo mảng errors và messages
 $errors = [];
 $messages = [];
 
-// Kiểm tra tính hợp lệ của các tham số
 if (!in_array($category, ['All', 'UpperWear', 'LowerWear'])) {
     $errors[] = "Danh mục không hợp lệ.";
 }
@@ -22,12 +22,17 @@ if (!is_numeric($maxPrice) || $maxPrice < 0) {
     $errors[] = "Giá tối đa không hợp lệ.";
 }
 
-if (!in_array($sortBy, ['price_asc', 'price_desc'])) {
-    $errors[] = "Tiêu chí sắp xếp không hợp lệ.";
+if ($minPrice > $maxPrice) {
+    $errors[] = "Giá tối thiểu không được lớn hơn giá tối đa.";
 }
 
-if (count($errors) === 0) {
-    // Khởi tạo kết nối đến cơ sở dữ liệu
+if ($minPrice > 20000000 || $maxPrice > 20000000) {
+    $errors[] = "Giá không được vượt quá 20.000.000 VND.";
+}
+
+if (count($errors) > 0) {
+    $products = [];
+} else {
     $serverName = "TanThinh";
     $connectionInfo = array(
         "Database" => "shopee", 
@@ -40,18 +45,19 @@ if (count($errors) === 0) {
         die(print_r(sqlsrv_errors(), true));
     }
 
-    // Lấy danh sách sản phẩm
     try {
         if ($category !== 'All') {
-            $sql = "{CALL GetProductsBySellerAndCategory (?, ?, ?)}";
+            $sql = "{CALL GetSellerProductsByCategory (?, ?, ?, ?)}";
             $params = array(
+                $seller_id,
                 $category,
                 $minPrice,
                 $maxPrice
             );
         } else {
-            $sql = "{CALL GetProductsWithoutCategory (?, ?)}";
+            $sql = "{CALL GetSellerProductsWithoutCategory (?, ?, ?)}";
             $params = array(
+                $seller_id,
                 $minPrice,
                 $maxPrice
             );
@@ -67,13 +73,11 @@ if (count($errors) === 0) {
             $products[] = $row;
         }
 
-        // Sắp xếp sản phẩm theo tiêu chí
         usort($products, function($a, $b) use ($sortBy) {
             if ($sortBy === 'price_desc') {
                 return $b['price'] - $a['price'];
-            } else {
-                return $a['price'] - $b['price'];
             }
+            return $a['price'] - $b['price'];
         });
 
     } catch (Exception $e) {
@@ -93,7 +97,6 @@ if (count($errors) === 0) {
 </head>
 <body>
     <div class="container">
-        <!-- Hiển thị thông báo nếu có lỗi -->
         <?php if (count($errors) > 0): ?>
             <div class="alert alert-danger">
                 <?php foreach ($errors as $error): ?>
@@ -102,7 +105,6 @@ if (count($errors) === 0) {
             </div>
         <?php endif; ?>
 
-        <!-- Hiển thị thông báo nếu có thành công -->
         <?php if (count($messages) > 0): ?>
             <div class="alert alert-success">
                 <?php foreach ($messages as $message): ?>
@@ -111,7 +113,6 @@ if (count($errors) === 0) {
             </div>
         <?php endif; ?>
 
-        <!-- Form tìm kiếm sản phẩm -->
         <form method="GET">
             <div class="form-group">
                 <label for="category">Danh mục:</label>
@@ -139,30 +140,47 @@ if (count($errors) === 0) {
             <button type="submit">Tìm kiếm</button>
         </form>
 
-        <!-- Hiển thị danh sách sản phẩm nếu không có lỗi -->
         <?php if (count($products) > 0): ?>
             <div class="product-table">
                 <table>
                     <thead>
                         <tr>
+                            <th>ID</th>
                             <th>Tên sản phẩm</th>
                             <th>Giá</th>
                             <th>Danh mục</th>
-                            <th>Cửa hàng</th>
+                            <th>Mô tả</th>
+                            <th>Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($products as $product): ?>
                             <tr>
+                                <td><?= htmlspecialchars($product['product_id']) ?></td>
                                 <td><?= htmlspecialchars($product['product_name']) ?></td>
                                 <td><?= number_format($product['price'], 0, ',', '.') ?> VND</td>
                                 <td><?= htmlspecialchars($product['category']) ?></td>
-                                <td><?= htmlspecialchars($product['shop_name']) ?></td>
+                                <td><?= htmlspecialchars($product['description']) ?></td>
+                                <td class="actions">
+                                    <a href="EditProduct.php?id=<?= $product['product_id'] ?>" class="edit-btn">Sửa</a>
+                                    <form action="Delete.php" method="GET" style="display:inline;">
+                                        <input type="hidden" name="id" value="<?= $product['product_id'] ?>">
+                                        <button type="submit" class="delete-btn">Xóa</button>
+                                    </form>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
+            
+            <script>
+            function confirmDelete(productId) {
+                if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
+                    window.location.href = `Delete.php?id=${productId}`;
+                }
+            }
+            </script>
         <?php elseif (count($errors) === 0): ?>
             <p>Không có sản phẩm nào phù hợp với tìm kiếm của bạn.</p>
         <?php endif; ?>

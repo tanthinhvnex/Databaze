@@ -448,3 +448,52 @@ BEGIN
     HAVING 
         SUM(od.total_price) > 0;
 END
+---------------------
+CREATE PROCEDURE GetSellerProductsByCategory
+    @SellerId INT,
+    @Category NVARCHAR(50),
+    @MinPrice DECIMAL(10,2),
+    @MaxPrice DECIMAL(10,2)
+AS
+BEGIN
+    SELECT 
+        p.product_id,
+        p.product_name,
+        p.price,
+        p.category,
+        p.description,
+        s.shop_name,
+        u.first_name + ' ' + u.last_name as seller_name,
+        u.email as seller_email
+    FROM Products p
+    INNER JOIN Sellers s ON p.seller_id = s.seller_id
+    INNER JOIN Users u ON s.seller_id = u.user_id
+    WHERE p.seller_id = @SellerId
+        AND p.category = @Category 
+        AND p.price BETWEEN @MinPrice AND @MaxPrice
+    ORDER BY p.price ASC;
+END;
+GO
+
+CREATE PROCEDURE GetSellerProductsWithoutCategory
+    @SellerId INT,
+    @MinPrice DECIMAL(10,2),
+    @MaxPrice DECIMAL(10,2)
+AS
+BEGIN
+    SELECT 
+        p.product_id,
+        p.product_name,
+        p.price,
+        p.category,
+        p.description,
+        s.shop_name,
+        u.first_name + ' ' + u.last_name AS seller_name,
+        u.email as seller_email
+    FROM Products p
+    JOIN Sellers s ON p.seller_id = s.seller_id
+    JOIN Users u ON s.seller_id = u.user_id
+    WHERE p.seller_id = @SellerId
+        AND p.price BETWEEN @MinPrice AND @MaxPrice
+    ORDER BY p.price ASC;
+END;
