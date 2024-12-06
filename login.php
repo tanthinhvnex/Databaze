@@ -19,63 +19,68 @@ $password = $_POST['password'];
 session_start();
 $_SESSION['email'] = $email;
 
-// SQL query to check if the user exists in the Users table with matching email and password
+// SQL query to check if the user exists
 $sql = "SELECT user_id, email, password FROM [shopee].[dbo].[Users] WHERE email = ? AND password = ?";
 $params = array($email, $password);
 $stmt = sqlsrv_query($conn, $sql, $params);
 
 if ($stmt === false) {
-    die(print_r(sqlsrv_errors(), true));  // In lỗi chi tiết nếu có lỗi khi thực hiện truy vấn
+    die(print_r(sqlsrv_errors(), true));
 }
 
 // Fetch the result
-$row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);  // Get the first row of the result
+$row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
 
-// Kiểm tra nếu $row là một mảng hợp lệ
 if (!is_array($row)) {
-    // Nếu không có dữ liệu nào
     echo "Login failed. Please check your email and password.";
     sqlsrv_close($conn);
-    exit();  // Exit if no rows are returned
-} 
-
-
-// Retrieve user_id from the fetched row
-$user_id = $row['user_id'];  // Lấy user_id từ kết quả
-$_SESSION['user_id'] = $user_id; 
-// SQL query to check if the user is a seller or buyer
-$sqlRole = "SELECT 'seller' AS role FROM [shopee].[dbo].[Sellers] WHERE seller_id = ?
-            UNION
-            SELECT 'buyer' AS role FROM [shopee].[dbo].[Buyers] WHERE buyer_id = ?";
-$paramsRole = array($user_id, $user_id);
-$stmtRole = sqlsrv_query($conn, $sqlRole, $paramsRole);
-
-// Check if the query executed successfully
-if ($stmtRole === false) {
-    die(print_r(sqlsrv_errors(), true));  // In case of query execution error
+    exit();
 }
 
-// Fetch the role information
-$rowRole = sqlsrv_fetch_array($stmtRole, SQLSRV_FETCH_ASSOC);  // Get the first row of the role query
+// Retrieve and store user_id
+$user_id = $row['user_id'];
+$_SESSION['user_id'] = $user_id;
 
-// Kiểm tra nếu có dữ liệu trong $rowRole
+// Check role and get specific ID (seller_id or buyer_id)
+$sqlRole = "SELECT 
+    CASE 
+        WHEN s.seller_id IS NOT NULL THEN 'seller' 
+        ELSE 'buyer' 
+    END as role,
+    COALESCE(s.seller_id, b.buyer_id) as specific_id
+FROM [shopee].[dbo].[Users] u
+LEFT JOIN [shopee].[dbo].[Sellers] s ON u.user_id = s.seller_id
+LEFT JOIN [shopee].[dbo].[Buyers] b ON u.user_id = b.buyer_id
+WHERE u.user_id = ?";
+
+$paramsRole = array($user_id);
+$stmtRole = sqlsrv_query($conn, $sqlRole, $paramsRole);
+
+if ($stmtRole === false) {
+    die(print_r(sqlsrv_errors(), true));
+}
+
+$rowRole = sqlsrv_fetch_array($stmtRole, SQLSRV_FETCH_ASSOC);
+
 if ($rowRole === false) {
     echo "User found but no role (buyer/seller) assigned.<br>";
     sqlsrv_close($conn);
-    exit();  // Exit if no role is found
+    exit();
 }
 
-$role = $rowRole['role'];  // Lấy vai trò người dùng
-$_SESSION['role'] = $role;  // Set the session role
+// Store role and specific ID in session
+$role = $rowRole['role'];
+$specific_id = $rowRole['specific_id'];
+$_SESSION['role'] = $role;
+$_SESSION['specific_id'] = $specific_id;
 
-// Redirect to the appropriate dashboard based on role
+// Redirect based on role
 if ($role === 'seller') {
-    header("Location: sellers/Nav_bar.html");  // Redirect to seller dashboard
+    header("Location: sellers/Nav_bar.html");
 } else {
-    header("Location: buyers/Nav_bar.html");  // Redirect to buyer dashboard
+    header("Location: buyers/Nav_bar.html");
 }
 exit();
 
-// Close the database connection
 sqlsrv_close($conn);
 ?>

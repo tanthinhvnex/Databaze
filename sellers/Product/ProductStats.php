@@ -2,7 +2,7 @@
 // Xử lý form tìm kiếm sản phẩm
 $category = isset($_GET['category']) ? $_GET['category'] : 'All';
 $minPrice = isset($_GET['minPrice']) ? floatval($_GET['minPrice']) : 0;
-$maxPrice = isset($_GET['maxPrice']) ? floatval($_GET['maxPrice']) : 2000000;
+$maxPrice = isset($_GET['maxPrice']) ? floatval($_GET['maxPrice']) : 20000000;
 $sortBy = isset($_GET['sortBy']) ? $_GET['sortBy'] : 'price_asc';
 
 // Khởi tạo mảng errors và messages
@@ -138,43 +138,6 @@ if (count($errors) === 0) {
             </div>
             <button type="submit">Tìm kiếm</button>
         </form>
-
-        Phần code này sẽ được đặt trong file ProductStats.php, thay thế cho phần hiển thị danh sách sản phẩm cũ. Cụ thể, nó sẽ được đặt trong phần nội dung HTML, sau khi đã kiểm tra và xử lý các lỗi và thông báo.
-Dưới đây là cấu trúc tổng quát của file ProductStats.php với vị trí đặt phần code mới:
-phpCopy<?php
-// Xử lý form tìm kiếm sản phẩm
-// ...
-
-// Kiểm tra tính hợp lệ của các tham số
-// ...
-
-if (count($errors) === 0) {
-    // Khởi tạo kết nối đến cơ sở dữ liệu
-    // ...
-
-    // Lấy danh sách sản phẩm
-    // ...
-}
-?>
-
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Sản Phẩm - Databaze</title>
-    <link rel="stylesheet" href="./ProductStats.css">
-</head>
-<body>
-    <div class="container">
-        <!-- Hiển thị thông báo nếu có lỗi -->
-        <!-- ... -->
-
-        <!-- Hiển thị thông báo nếu có thành công -->
-        <!-- ... -->
-
-        <!-- Form tìm kiếm sản phẩm -->
-        <!-- ... -->
 
         <!-- Hiển thị danh sách sản phẩm nếu không có lỗi -->
         <?php if (count($products) > 0): ?>

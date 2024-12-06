@@ -367,28 +367,77 @@ BEGIN
     ORDER BY p.price ASC;
 END
 
--- Thống kê doanh thu theo người bán và có lọc theo số lượng đơn tối thiểu
-CREATE PROCEDURE GetSellerRevenueStats
-    @MinOrders INT,
-    @StartDate DATE,
-    @EndDate DATE
+-- Thống kê doanh thu và số lượng đơn hàng của 1 seller theo danh mục sản phẩm
+CREATE PROCEDURE sp_SellerRevenueByCategory
+    @seller_id INT,
+    @start_date DATE = NULL,
+    @end_date DATE = NULL,
+    @min_revenue DECIMAL(10,2) = 0
 AS
 BEGIN
+    -- Check seller existence
+    IF NOT EXISTS (SELECT 1 FROM Sellers WHERE seller_id = @seller_id)
+    BEGIN
+        RAISERROR('Seller ID does not exist!', 16, 1)
+        RETURN
+    END
+
+    IF @end_date IS NULL
+        SET @end_date = GETDATE()
+    
+    IF @start_date IS NULL
+        SET @start_date = DATEFROMPARTS(YEAR(@end_date), MONTH(@end_date), 1)
+
+    -- Basic seller info
     SELECT 
-        s.seller_id,
-        s.shop_name,
-        u.first_name + ' ' + u.last_name as seller_name,
-        COUNT(DISTINCT o.order_id) as total_orders,
-        SUM(od.total_price) as total_revenue,
-        AVG(od.price_on_purchase) as avg_product_price
+        s.shop_name as 'shop_name',
+        u.first_name + ' ' + u.last_name as 'seller_name'
     FROM Sellers s
-    INNER JOIN Users u ON s.seller_id = u.user_id
-    INNER JOIN Products p ON s.seller_id = p.seller_id
-    INNER JOIN OrderDetails od ON p.product_id = od.product_id
-    INNER JOIN Orders o ON od.order_id = o.order_id
-    WHERE o.order_date BETWEEN @StartDate AND @EndDate
-    GROUP BY s.seller_id, s.shop_name, u.first_name, u.last_name
-    HAVING COUNT(DISTINCT o.order_id) >= @MinOrders
-    ORDER BY total_revenue DESC;
-END;
-GO
+    JOIN Users u ON s.seller_id = u.user_id
+    WHERE s.seller_id = @seller_id;
+
+    -- Category statistics
+    SELECT 
+        ISNULL(p.category, 'No Category') as 'category',
+        COUNT(DISTINCT o.order_id) as 'order_count',
+        SUM(od.quantity) as 'total_items_sold',
+        SUM(od.total_price) as 'revenue',
+        ROUND(SUM(od.total_price) * 100.0 / NULLIF(SUM(SUM(od.total_price)) OVER (), 0), 2) as 'revenue_percentage',
+        AVG(od.price_on_purchase) as 'avg_price',
+        MAX(od.price_on_purchase) as 'max_price',
+        MIN(od.price_on_purchase) as 'min_price'
+    FROM Products p
+    JOIN ProductVariant pv ON p.product_id = pv.product_id
+    JOIN OrderDetails od ON pv.product_id = od.product_id AND pv.id = od.pv_stt
+    JOIN Orders o ON od.order_id = o.order_id
+    WHERE 
+        p.seller_id = @seller_id
+        AND o.order_date BETWEEN @start_date AND @end_date
+    GROUP BY 
+        p.category
+    HAVING 
+        SUM(od.total_price) >= @min_revenue
+        AND COUNT(DISTINCT o.order_id) >= 1
+        AND SUM(od.quantity) > 0
+    ORDER BY 
+        SUM(od.total_price) DESC;
+
+    -- Overview
+    SELECT 
+        COUNT(DISTINCT o.order_id) as 'total_orders',
+        SUM(od.quantity) as 'total_items',
+        SUM(od.total_price) as 'total_revenue',
+        CASE 
+            WHEN COUNT(DISTINCT o.order_id) = 0 THEN 0 
+            ELSE SUM(od.total_price) / COUNT(DISTINCT o.order_id) 
+        END as 'average_order_value'
+    FROM Products p
+    JOIN ProductVariant pv ON p.product_id = pv.product_id
+    JOIN OrderDetails od ON pv.product_id = od.product_id AND pv.id = od.pv_stt
+    JOIN Orders o ON od.order_id = o.order_id
+    WHERE 
+        p.seller_id = @seller_id
+        AND o.order_date BETWEEN @start_date AND @end_date
+    HAVING 
+        SUM(od.total_price) > 0;
+END
